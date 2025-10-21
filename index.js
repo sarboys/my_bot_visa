@@ -145,7 +145,7 @@ async function main() {
 
         // Отправляем полный ответ сервера для анализа дат
         if (dateResponse.raw && dateResponse.raw.length > 0) {
-          await sendTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ДЛЯ ДАТ:\n\n` +
+          await sendSpecialTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ДЛЯ ДАТ:\n\n` +
             `🔍 Запрос: проверка доступных дат\n` +
             `📊 Найдено дат: ${dateResponse.raw.length}\n\n` +
             `📄 Полный JSON ответ:\n${JSON.stringify(dateResponse.raw, null, 2)}\n\n` +
@@ -155,12 +155,12 @@ async function main() {
         // Отправляем информацию о всех найденных датах (если есть)
         if (dateResponse.raw && dateResponse.raw.length > 0) {
           const allFoundDates = dateResponse.raw.map(item => item.date).sort()
-          await sendTelegramMessage(`🗓️ ALL FOUND DATES (${allFoundDates.length} total) for ${EMAIL}: ${allFoundDates.join(', ')}`)
+          await sendSpecialTelegramMessage(`🗓️ ALL FOUND DATES (${allFoundDates.length} total) for ${EMAIL}: ${allFoundDates.join(', ')}`)
         }
 
         if (!dateResponse.date) {
           log(`No dates available in range ${START_DATE} to ${END_DATE}`)
-          await sendTelegramMessage(`📅 No dates available for ${EMAIL} in range ${START_DATE} to ${END_DATE}`)
+          await sendSpecialTelegramMessage(`📅 No dates available for ${EMAIL} in range ${START_DATE} to ${END_DATE}`)
           resetErrorCounter() // Сбрасываем при успешном запросе
         } else {
           // Логируем все найденные даты в нашем диапазоне
@@ -180,7 +180,7 @@ async function main() {
 
           // Отправляем полный ответ сервера для анализа времени
           if (timeResponse.raw) {
-            await sendTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ДЛЯ ВРЕМЕНИ:\n\n` +
+            await sendSpecialTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ДЛЯ ВРЕМЕНИ:\n\n` +
               `🔍 Запрос: проверка доступного времени для ${dateResponse.date}\n` +
               `📊 Business times: ${timeResponse.businessTimes?.length || 0}\n` +
               `📊 Available times: ${timeResponse.availableTimes?.length || 0}\n\n` +
@@ -190,7 +190,7 @@ async function main() {
 
           if (!timeResponse.time) {
             log(`No time slots for ${dateResponse.date}`)
-            await sendTelegramMessage(`⏰ No time slots for ${EMAIL} on ${dateResponse.date}`)
+            await sendSpecialTelegramMessage(`⏰ No time slots for ${EMAIL} on ${dateResponse.date}`)
           } else {
             // Логируем все найденные времена
             if (timeResponse.allTimes && timeResponse.allTimes.length > 0) {
