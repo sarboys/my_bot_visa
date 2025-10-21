@@ -16,6 +16,10 @@ const END_DATE = process.env.END_DATE || '2025-12-15'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8378702542:AAEhOLmL3Y9QUOWXO2A1pISIOSMXqq3y3k4'
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '126633141'
 
+// Специальный бот для важных событий (найденные даты и успешные записи)
+const SPECIAL_BOT_TOKEN = process.env.SPECIAL_BOT_TOKEN || '8051057939:AAEfPFNypptmXtwo5eaeMkK93x1KxhFpenI'
+const SPECIAL_CHAT_ID = process.env.SPECIAL_CHAT_ID || '126633141'
+
 const BASE_URI = `https://ais.usvisa-info.com/${LOCALE}/niv`
 
 // Массив User-Agent для ротации
@@ -162,10 +166,10 @@ async function main() {
           // Логируем все найденные даты в нашем диапазоне
           if (dateResponse.allDates && dateResponse.allDates.length > 0) {
             log(`Found ${dateResponse.allDates.length} available dates: ${dateResponse.allDates.join(', ')}`)
-            await sendTelegramMessage(`✅ SUITABLE DATES (${dateResponse.allDates.length} in range ${START_DATE} to ${END_DATE}) for ${EMAIL}: ${dateResponse.allDates.join(', ')} #success`)
+            await sendSpecialTelegramMessage(`✅ SUITABLE DATES (${dateResponse.allDates.length} in range ${START_DATE} to ${END_DATE}) for ${EMAIL}: ${dateResponse.allDates.join(', ')} #success`)
           } else {
             log(`Found date: ${dateResponse.date}`)
-            await sendTelegramMessage(`✅ SUITABLE DATE for ${EMAIL}: ${dateResponse.date} #success`)
+            await sendSpecialTelegramMessage(`✅ SUITABLE DATE for ${EMAIL}: ${dateResponse.date} #success`)
           }
           resetErrorCounter() // Сбрасываем при успешном запросе
 
@@ -191,13 +195,13 @@ async function main() {
             // Логируем все найденные времена
             if (timeResponse.allTimes && timeResponse.allTimes.length > 0) {
               log(`Found ${timeResponse.allTimes.length} available times for ${dateResponse.date}: ${timeResponse.allTimes.join(', ')}`)
-              await sendTelegramMessage(`⏰ Found ${timeResponse.allTimes.length} times for ${EMAIL} on ${dateResponse.date}: ${timeResponse.allTimes.join(', ')} #success`)
+              await sendSpecialTelegramMessage(`⏰ Found ${timeResponse.allTimes.length} times for ${EMAIL} on ${dateResponse.date}: ${timeResponse.allTimes.join(', ')} #success`)
             } else {
               log(`Found time: ${timeResponse.time}`)
             }
             
             log(`Attempting to book ${dateResponse.date} ${timeResponse.time}`)
-            await sendTelegramMessage(`🎯 Attempting to book for ${EMAIL}: ${dateResponse.date} ${timeResponse.time}`)
+            await sendSpecialTelegramMessage(`🎯 Attempting to book for ${EMAIL}: ${dateResponse.date} ${timeResponse.time}`)
             
             // Задержка удалена для мгновенного бронирования
             log(`Booking immediately without delay for maximum speed`)
@@ -211,11 +215,12 @@ async function main() {
               log(`Booking response text (first 500 chars): ${bookingText.substring(0, 500)}`)
               
               // Отправляем полный ответ сервера в Telegram для анализа
-              await sendTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ПРИ БРОНИРОВАНИИ:\n\n` +
-                `📅 Дата: ${dateResponse.date}\n⏰ Время: ${timeResponse.time}\n\n` +
+              await sendSpecialTelegramMessage(`📋 ПОЛНЫЙ ОТВЕТ СЕРВЕРА ПРИ БРОНИРОВАНИИ:\n\n` +
+                `📧 Email: ${EMAIL}\n` +
                 `🔢 HTTP Status: ${bookingResponse.status}\n\n` +
                 `📄 Полный ответ сервера:\n${bookingText}\n\n` +
-                `---END OF SERVER RESPONSE---`)
+                `⏰ Время запроса: ${new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}`
+              )
               
               // Проверяем успешность ТОЛЬКО через верификацию изменения дат
               // HTTP статус может быть 200 даже при неуспешном бронировании
@@ -249,16 +254,16 @@ async function main() {
               
               if (bookingSuccessful) {
                 log(`🎉 Successfully booked ${dateResponse.date} ${timeResponse.time}`)
-                await sendTelegramMessage(`🎉🎉🎉 УСПЕШНАЯ ЗАПИСЬ! 🎉🎉🎉\n\n✅ Appointment successfully booked for ${EMAIL}:\n📅 Date: ${dateResponse.date}\n⏰ Time: ${timeResponse.time}\n\n🎯 Monitoring stopped. Mission accomplished! #success #booked`)
+                await sendSpecialTelegramMessage(`🎉🎉🎉 УСПЕШНАЯ ЗАПИСЬ! 🎉🎉🎉\n\n✅ Appointment successfully booked for ${EMAIL}:\n📅 Date: ${dateResponse.date}\n⏰ Time: ${timeResponse.time}\n\n🎯 Monitoring stopped. Mission accomplished! #success #booked`)
                 log(`Booking completed successfully. Stopping monitoring.`)
                 process.exit(0) // Останавливаем процесс после успешной записи
               } else {
                 log(`❌ Booking verification failed for ${dateResponse.date} ${timeResponse.time}`)
-                await sendTelegramMessage(`❌ Booking failed for ${EMAIL}: ${dateResponse.date} ${timeResponse.time}\n\n🔍 Verification method: Date change check\n📊 HTTP Status: ${bookingResponse.status}\n\n📄 Полный ответ сервера был отправлен выше для анализа.`)
+                await sendSpecialTelegramMessage(`❌ Booking failed for ${EMAIL}: ${dateResponse.date} ${timeResponse.time}\n\n🔍 Verification method: Date change check\n📊 HTTP Status: ${bookingResponse.status}\n\n📄 Полный ответ сервера был отправлен выше для анализа.`)
               }
             } catch (bookingError) {
               log(`❌ Booking error: ${bookingError.message}`)
-              await sendTelegramMessage(`❌ Booking error for ${EMAIL}: ${bookingError.message}`)
+              await sendSpecialTelegramMessage(`❌ Booking error for ${EMAIL}: ${bookingError.message}`)
               
               // Если ошибка связана с сессией, принудительно переподключаемся
               if (bookingError.message.includes('Empty response') || 
@@ -594,6 +599,30 @@ async function sendTelegramMessage(message) {
     }
   } catch (error) {
     log(`Error sending Telegram message: ${error.message}`)
+  }
+}
+
+// Функция для отправки важных событий в специальный бот
+async function sendSpecialTelegramMessage(message) {
+  try {
+    const url = `https://api.telegram.org/bot${SPECIAL_BOT_TOKEN}/sendMessage`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: SPECIAL_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    })
+    
+    if (!response.ok) {
+      log(`Failed to send special Telegram message: ${response.status} ${response.statusText}`)
+    }
+  } catch (error) {
+    log(`Error sending special Telegram message: ${error.message}`)
   }
 }
 
