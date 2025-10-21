@@ -160,7 +160,7 @@ async function main() {
 
         if (!dateResponse.date) {
           log(`No dates available in range ${START_DATE} to ${END_DATE}`)
-          await sendSpecialTelegramMessage(`📅 No dates available for ${EMAIL} in range ${START_DATE} to ${END_DATE}`)
+          await sendTelegramMessage(`📅 No dates available for ${EMAIL} in range ${START_DATE} to ${END_DATE}`)
           resetErrorCounter() // Сбрасываем при успешном запросе
         } else {
           // Логируем все найденные даты в нашем диапазоне
@@ -190,7 +190,7 @@ async function main() {
 
           if (!timeResponse.time) {
             log(`No time slots for ${dateResponse.date}`)
-            await sendSpecialTelegramMessage(`⏰ No time slots for ${EMAIL} on ${dateResponse.date}`)
+            await sendTelegramMessage(`⏰ No time slots for ${EMAIL} on ${dateResponse.date}`)
           } else {
             // Логируем все найденные времена
             if (timeResponse.allTimes && timeResponse.allTimes.length > 0) {
