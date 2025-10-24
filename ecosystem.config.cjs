@@ -14,6 +14,7 @@ module.exports = {
         LOCALE: process.env.LOCALE,
         START_DATE: process.env.START_DATE || '2025-11-25',
         END_DATE: process.env.END_DATE || '2025-12-15',
+        DAYS_BEFORE_BOOKING: process.env.DAYS_BEFORE_BOOKING || '0',
         TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || '8378702542:AAEhOLmL3Y9QUOWXO2A1pISIOSMXqq3y3k4',
         TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID || '126633141',
       }

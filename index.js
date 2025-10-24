@@ -11,8 +11,33 @@ const PASSWORD = process.env.PASSWORD
 const SCHEDULE_ID = process.env.SCHEDULE_ID
 const FACILITY_ID = process.env.FACILITY_ID
 const LOCALE = process.env.LOCALE
-const START_DATE = process.env.START_DATE || '2025-11-25'
+const DAYS_BEFORE_BOOKING = parseInt(process.env.DAYS_BEFORE_BOOKING) || 0
 const END_DATE = process.env.END_DATE || '2025-12-15'
+
+// Функция для расчета START_DATE с учетом days_before_booking
+function calculateStartDate() {
+  const originalStartDate = process.env.START_DATE || '2025-11-25'
+  
+  if (DAYS_BEFORE_BOOKING === 0) {
+    return originalStartDate
+  }
+  
+  const today = new Date()
+  const originalDate = new Date(originalStartDate)
+  
+  // Рассчитываем минимальную дату с учетом days_before_booking
+  const minBookingDate = new Date(today)
+  minBookingDate.setDate(today.getDate() + DAYS_BEFORE_BOOKING)
+  
+  // Если оригинальная дата раньше минимальной даты бронирования, используем минимальную
+  if (originalDate < minBookingDate) {
+    return minBookingDate.toISOString().split('T')[0]
+  }
+  
+  return originalStartDate
+}
+
+const START_DATE = calculateStartDate()
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8378702542:AAEhOLmL3Y9QUOWXO2A1pISIOSMXqq3y3k4'
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '126633141'
 
