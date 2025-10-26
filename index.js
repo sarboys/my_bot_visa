@@ -18,19 +18,11 @@ const END_DATE = process.env.END_DATE || '2025-12-15'
 function calculateStartDate() {
   const originalStartDate = process.env.START_DATE || '2025-11-25'
   
-  if (DAYS_BEFORE_BOOKING === 0) {
-    return originalStartDate
-  }
-  
-  const today = new Date()
-  const originalDate = new Date(originalStartDate)
-  
-  // Рассчитываем минимальную дату с учетом days_before_booking
-  const minBookingDate = new Date(today)
-  minBookingDate.setDate(today.getDate() + DAYS_BEFORE_BOOKING)
-  
-  // Если оригинальная дата раньше минимальной даты бронирования, используем минимальную
-  if (originalDate < minBookingDate) {
+  // Если указан DAYS_BEFORE_BOOKING, игнорируем оригинальную START_DATE и берем сегодня + N дней
+  if (DAYS_BEFORE_BOOKING > 0) {
+    const today = new Date()
+    const minBookingDate = new Date(today)
+    minBookingDate.setDate(today.getDate() + DAYS_BEFORE_BOOKING)
     return minBookingDate.toISOString().split('T')[0]
   }
   
@@ -113,7 +105,7 @@ async function main() {
     process.exit(1)
   }
 
-  log(`Starting monitoring for ${EMAIL}, range ${START_DATE} to ${END_DATE}`)
+  log(`Starting monitoring for ${EMAIL}, range ${START_DATE} to ${END_DATE} (DAYS_BEFORE_BOOKING: ${DAYS_BEFORE_BOOKING}, original START_DATE: ${process.env.START_DATE || 'not set'})`)
   await sendTelegramMessage(`🔔 Started monitoring for ${EMAIL} in range ${START_DATE} to ${END_DATE}`)
 
   let sessionHeaders = null
