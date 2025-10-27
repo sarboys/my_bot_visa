@@ -18,12 +18,22 @@ const END_DATE = process.env.END_DATE || '2025-12-15'
 function calculateStartDate() {
   const originalStartDate = process.env.START_DATE || '2025-11-25'
   
-  // Если указан DAYS_BEFORE_BOOKING, игнорируем оригинальную START_DATE и берем сегодня + N дней
+  // Если указан DAYS_BEFORE_BOOKING, проверяем нужно ли сдвинуть дату
   if (DAYS_BEFORE_BOOKING > 0) {
     const today = new Date()
-    const minBookingDate = new Date(today)
-    minBookingDate.setDate(today.getDate() + DAYS_BEFORE_BOOKING)
-    return minBookingDate.toISOString().split('T')[0]
+    const startDate = new Date(originalStartDate)
+    
+    // Вычисляем разность в днях между сегодня и начальной датой
+    const diffTime = startDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // Если до начальной даты остается меньше чем days_before_booking дней,
+    // сдвигаем начальную дату вперед
+    if (diffDays < DAYS_BEFORE_BOOKING) {
+      const shiftedDate = new Date(today)
+      shiftedDate.setDate(today.getDate() + DAYS_BEFORE_BOOKING)
+      return shiftedDate.toISOString().split('T')[0]
+    }
   }
   
   return originalStartDate
