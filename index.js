@@ -324,7 +324,7 @@ async function main() {
         throw apiError // Передаем ошибку дальше для общей обработки
       }
 
-      const delay = randomDelay(10, 20) // Минимальная задержка 5-15 секунд для максимальной скорости
+      const delay = randomDelay(10, 60) // Минимальная задержка 5-15 секунд для максимальной скорости
       log(`Main loop delay: waiting ${delay} seconds`)
       await sleep(delay)
     }
