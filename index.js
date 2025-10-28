@@ -324,7 +324,7 @@ async function main() {
         throw apiError // Передаем ошибку дальше для общей обработки
       }
 
-      const delay = randomDelay(10, 60) // Минимальная задержка 5-15 секунд для максимальной скорости
+      const delay = randomDelay(10, 30) // Минимальная задержка 5-15 секунд для максимальной скорости
       log(`Main loop delay: waiting ${delay} seconds`)
       await sleep(delay)
     }
@@ -524,15 +524,17 @@ function checkAvailableTime(headers, date) {
     .then(d => {
       const businessTimes = d['business_times'] || []
       const availableTimes = d['available_times'] || []
-      // Deduplicate times while preserving priority for businessTimes
-      const allTimes = Array.from(new Set([...businessTimes, ...availableTimes]))
       
-      // Return all available times and the first one for backward compatibility
-      const firstTime = businessTimes[0] || allTimes[0]
+      // Use the same logic as working bot: business_times[0] || available_times[0]
+      const firstTime = businessTimes[0] || availableTimes[0]
+      
+      log(`🕐 Business times: ${JSON.stringify(businessTimes)}`)
+      log(`🕐 Available times: ${JSON.stringify(availableTimes)}`)
+      log(`🕐 Selected time: ${firstTime}`)
       
       return {
         time: firstTime,
-        allTimes: allTimes,
+        allTimes: [...businessTimes, ...availableTimes],
         businessTimes: businessTimes,
         availableTimes: availableTimes,
         raw: d

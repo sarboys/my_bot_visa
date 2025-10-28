@@ -1,35 +1,134 @@
-# us-visa-bot
-Bot to anticipate the interview date for a US visa.
+# US Visa Appointment Bot v2.0
 
-## How it works
+Модульная версия бота для автоматического бронирования записей на визу США.
 
-The bot is quite simple. You provide some informations for the bot to sign in in your behalf on https://ais.usvisa-info.com/, and then
-it checks the nearest dates every few seconds. When it finds a closer date, it automatically book that time for you.
+## 🏗️ Архитектура
 
-## How to find the variables?
+Проект теперь имеет модульную архитектуру:
 
-- EMAIL and PASSWORD are your credentials to https://ais.usvisa-info.com.
-- LOCALE depends on your language, can be found in the URL when trying to reschedule https://ais.usvisa-info.com/{LOCALE}/. 'fr-fr' for France, 'pt-br' for Brazil...
-- SCHEDULE_ID can be found in the URL when trying to reschedule manually https://ais.usvisa-info.com/{LOCALE}/niv/schedule/{SCHEDULE_ID}/continue_actions.
-- FACILITY_ID can be found looking at the network calls when trying to reschedule manually, when you get on the page where you can select a new date, you should see a network call similar to https://ais.usvisa-info.com/{LOCALE}/niv/schedule/{SCHEDULE_ID}/appointment/address/{FACILITY_ID}. Paris is 44. Alternatively you can inspect the Selector on this page and look at the value.
-
-
-## Installing
-
-You'll need node 16+ to run the bot. Also, you'll have to install some dependencies:
-
-```sh
-npm install
+```
+us-visa-bot/
+├── lib/
+│   ├── client.js      # VisaHttpClient - HTTP запросы к API
+│   ├── bot.js         # Bot - основная логика бота
+│   ├── config.js      # Конфигурация и валидация
+│   └── utils.js       # Вспомогательные функции
+├── index_new.js       # Новый главный файл (модульный)
+├── index.js           # Старый монолитный файл (для сравнения)
+└── package.json       # Зависимости и скрипты
 ```
 
-## Usage
+## 🚀 Запуск
 
-```sh
-export EMAIL=''
-export PASSWORD=''
-export LOCALE=''
-export SCHEDULE_ID=
-export FACILITY_ID=
+### Новая модульная версия (рекомендуется):
+```bash
+# Обычный запуск
+npm start
 
-./index.js <your current interview date, ex: 2023-01-01>
+# Тестовый режим (без реального бронирования)
+npm run dev
+
+# С параметрами
+node index_new.js --current=2024-03-15 --target=2024-02-01 --dry-run
+```
+
+### Старая версия (для сравнения):
+```bash
+npm run old
+```
+
+## 📋 Параметры командной строки
+
+- `--dry-run` - Тестовый режим без реального бронирования
+- `--current=YYYY-MM-DD` - Текущая забронированная дата
+- `--target=YYYY-MM-DD` - Целевая дата (остановить бота при достижении)
+- `--max-iterations=N` - Максимальное количество итераций
+
+## ⚙️ Конфигурация
+
+Настройки находятся в файле `.env` или переменных окружения:
+
+```env
+# Учетные данные
+EMAIL=your-email@example.com
+PASSWORD=your-password
+LOCALE=en-ca
+
+# Параметры записи
+SCHEDULE_ID=12345
+FACILITY_ID=67890
+
+# Диапазон дат
+START_DATE=2024-01-01
+END_DATE=2024-06-30
+
+# Telegram уведомления
+TELEGRAM_BOT_TOKEN=your-bot-token
+TELEGRAM_CHAT_ID=your-chat-id
+SPECIAL_BOT_TOKEN=special-bot-token
+SPECIAL_CHAT_ID=special-chat-id
+
+# Настройки бота
+CHECK_INTERVAL=300000
+MAX_RETRIES=3
+```
+
+## 🔧 Основные улучшения v2.0
+
+### 1. Модульная архитектура
+- **VisaHttpClient**: Изолированные HTTP запросы
+- **Bot**: Основная логика без HTTP деталей
+- **Config**: Централизованная конфигурация
+- **Utils**: Переиспользуемые утилиты
+
+### 2. Улучшенная обработка ошибок
+- Circuit breaker для повторных попыток входа
+- Специальная обработка socket hangup ошибок
+- Graceful shutdown при SIGINT/SIGTERM
+
+### 3. Лучшее логирование
+- Структурированные логи
+- Детальная информация о запросах и ответах
+- Цветные эмодзи для лучшей читаемости
+
+### 4. Гибкость запуска
+- Параметры командной строки
+- Dry-run режим для тестирования
+- Поддержка целевых дат и ограничений итераций
+
+## 🧪 Тестирование
+
+```bash
+# Тестовый запуск без реального бронирования
+npm run dev
+
+# Проверка конфигурации
+node -e "import('./lib/config.js').then(({getConfig}) => console.log(getConfig()))"
+```
+
+## 📊 Сравнение с v1.0
+
+| Аспект | v1.0 (Монолит) | v2.0 (Модульный) |
+|--------|----------------|------------------|
+| Размер файла | 700+ строк | ~100 строк main |
+| Тестируемость | Сложно | Легко |
+| Поддержка | Сложно | Легко |
+| Переиспользование | Нет | Да |
+| Читаемость | Низкая | Высокая |
+
+## 🔄 Миграция с v1.0
+
+1. Убедитесь, что все зависимости установлены
+2. Скопируйте настройки из старого `.env`
+3. Используйте `npm start` вместо `node index.js`
+4. При необходимости используйте `npm run old` для запуска старой версии
+
+## 🐛 Отладка
+
+Для детального логирования HTTP запросов раскомментируйте строки в `lib/client.js`:
+
+```javascript
+// Раскомментируйте для детального логирования
+// log(`Request URL: ${url}`);
+// log(`Response: ${responseText.substring(0, 1000)}`);
 ```
