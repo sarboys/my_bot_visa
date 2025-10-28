@@ -423,7 +423,11 @@ async function login() {
 }
 
 function checkAvailableDate(headers) {
-  return fetch(`${BASE_URI}/schedule/${SCHEDULE_ID}/appointment/days/${FACILITY_ID}.json?appointments[expedite]=false`, createFetchOptions({
+  const url = `${BASE_URI}/schedule/${SCHEDULE_ID}/appointment/days/${FACILITY_ID}.json?appointments[expedite]=false`
+  log(`🔗 REQUEST URL (checkAvailableDate): ${url}`)
+  log(`📤 REQUEST HEADERS: ${JSON.stringify(headers, null, 2)}`)
+  
+  return fetch(url, createFetchOptions({
     "headers": Object.assign({}, headers, {
       "Accept": "application/json, text/javascript, */*; q=0.01",
       "Accept-Language": "en-US,en;q=0.9",
@@ -436,6 +440,9 @@ function checkAvailableDate(headers) {
   }))
     .then(async r => {
       const responseText = await r.text()
+      log(`📥 RESPONSE STATUS: ${r.status}`)
+      log(`📥 RESPONSE HEADERS: ${JSON.stringify(Object.fromEntries(r.headers.entries()), null, 2)}`)
+      log(`📥 RESPONSE BODY (first 1000 chars): ${responseText.substring(0, 1000)}`)
       log(`Date API response status: ${r.status}, body length: ${responseText.length}`)
       
       if (!responseText.trim()) {
@@ -480,7 +487,11 @@ function checkAvailableDate(headers) {
 }
 
 function checkAvailableTime(headers, date) {
-  return fetch(`${BASE_URI}/schedule/${SCHEDULE_ID}/appointment/times/${FACILITY_ID}.json?date=${date}&appointments[expedite]=false`, createFetchOptions({
+  const url = `${BASE_URI}/schedule/${SCHEDULE_ID}/appointment/times/${FACILITY_ID}.json?date=${date}&appointments[expedite]=false`
+  log(`🔗 REQUEST URL (checkAvailableTime): ${url}`)
+  log(`📤 REQUEST HEADERS: ${JSON.stringify(headers, null, 2)}`)
+  
+  return fetch(url, createFetchOptions({
     "headers": Object.assign({}, headers, {
       "Accept": "application/json, text/javascript, */*; q=0.01",
       "Accept-Language": "en-US,en;q=0.9",
@@ -493,6 +504,9 @@ function checkAvailableTime(headers, date) {
   }))
     .then(async r => {
       const responseText = await r.text()
+      log(`📥 RESPONSE STATUS: ${r.status}`)
+      log(`📥 RESPONSE HEADERS: ${JSON.stringify(Object.fromEntries(r.headers.entries()), null, 2)}`)
+      log(`📥 RESPONSE BODY (first 1000 chars): ${responseText.substring(0, 1000)}`)
       log(`Time API response status: ${r.status}, body length: ${responseText.length}`)
       
       if (!responseText.trim()) {
@@ -510,10 +524,11 @@ function checkAvailableTime(headers, date) {
     .then(d => {
       const businessTimes = d['business_times'] || []
       const availableTimes = d['available_times'] || []
-      const allTimes = [...businessTimes, ...availableTimes]
+      // Deduplicate times while preserving priority for businessTimes
+      const allTimes = Array.from(new Set([...businessTimes, ...availableTimes]))
       
       // Return all available times and the first one for backward compatibility
-      const firstTime = businessTimes[0] || availableTimes[0]
+      const firstTime = businessTimes[0] || allTimes[0]
       
       return {
         time: firstTime,
@@ -537,28 +552,49 @@ function handleErrors(response) {
 
 async function book(headers, date, time) {
   const url = `${BASE_URI}/schedule/${SCHEDULE_ID}/appointment`
+  log(`🔗 REQUEST URL (book - GET for headers): ${url}`)
+  log(`📤 REQUEST HEADERS (initial): ${JSON.stringify(headers, null, 2)}`)
 
   const newHeaders = await fetch(url, { "headers": headers })
     .then(response => extractHeaders(response))
 
+  const requestBody = new URLSearchParams({
+    'utf8': '✓',
+    'authenticity_token': newHeaders['X-CSRF-Token'],
+    'confirmed_limit_message': '1',
+    'use_consulate_appointment_capacity': 'true',
+    'appointments[consulate_appointment][facility_id]': FACILITY_ID,
+    'appointments[consulate_appointment][date]': date,
+    'appointments[consulate_appointment][time]': time,
+    'appointments[asc_appointment][facility_id]': '',
+    'appointments[asc_appointment][date]': '',
+    'appointments[asc_appointment][time]': ''
+  })
+
+  const finalHeaders = Object.assign({}, newHeaders, {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  })
+
+  log(`🔗 REQUEST URL (book - POST): ${url}`)
+  log(`📤 REQUEST HEADERS (final): ${JSON.stringify(finalHeaders, null, 2)}`)
+  log(`📤 REQUEST BODY: ${requestBody.toString()}`)
+
   return fetch(url, {
     "method": "POST",
     "redirect": "follow",
-    "headers": Object.assign({}, newHeaders, {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    }),
-    "body": new URLSearchParams({
-      'utf8': '✓',
-      'authenticity_token': newHeaders['X-CSRF-Token'],
-      'confirmed_limit_message': '1',
-      'use_consulate_appointment_capacity': 'true',
-      'appointments[consulate_appointment][facility_id]': FACILITY_ID,
-      'appointments[consulate_appointment][date]': date,
-      'appointments[consulate_appointment][time]': time,
-      'appointments[asc_appointment][facility_id]': '',
-      'appointments[asc_appointment][date]': '',
-      'appointments[asc_appointment][time]': ''
-    }),
+    "headers": finalHeaders,
+    "body": requestBody,
+  }).then(async response => {
+    const responseText = await response.text()
+    log(`📥 BOOKING RESPONSE STATUS: ${response.status}`)
+    log(`📥 BOOKING RESPONSE HEADERS: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`)
+    log(`📥 BOOKING RESPONSE BODY (first 1000 chars): ${responseText.substring(0, 1000)}`)
+    
+    // Возвращаем response с текстом для дальнейшей обработки
+    return {
+      ...response,
+      text: () => Promise.resolve(responseText)
+    }
   })
 }
 
@@ -567,33 +603,34 @@ async function extractHeaders(res) {
 
   const html = await res.text()
   const $ = cheerio.load(html);
-  const csrfToken = $('meta[name="csrf-token"]').attr('content')
+  const csrfMeta = $('meta[name="csrf-token"]').attr('content')
+  const csrfInput = $('input[name="authenticity_token"]').val()
+  const csrfToken = csrfInput || csrfMeta
 
   return {
     "Cookie": cookies,
     "X-CSRF-Token": csrfToken,
-    "Referer": BASE_URI,
+    "Referer": `${BASE_URI}/schedule/${SCHEDULE_ID}/appointment`,
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'User-Agent': getRandomUserAgent(),
     'Cache-Control': 'no-store',
     'Connection': 'keep-alive'
   }
 }
 
 function extractRelevantCookies(res) {
-  const parsedCookies = parseCookies(res.headers.get('set-cookie'))
-  return `_yatri_session=${parsedCookies['_yatri_session']}`
-}
+  // Prefer raw set-cookie array if available for reliability
+  const setCookieArr = res.headers?.raw && typeof res.headers.raw === 'function'
+    ? (res.headers.raw()['set-cookie'] || [])
+    : (res.headers.get('set-cookie') ? [res.headers.get('set-cookie')] : [])
 
-function parseCookies(cookies) {
-  const parsedCookies = {}
-
-  cookies.split(';').map(c => c.trim()).forEach(c => {
-    const [name, value] = c.split('=', 2)
-    parsedCookies[name] = value
-  })
-
-  return parsedCookies
+  for (const sc of setCookieArr) {
+    const match = sc.match(/_yatri_session=([^;]+)/)
+    if (match) {
+      return `_yatri_session=${match[1]}`
+    }
+  }
+  return ''
 }
 
 function sleep(s) {
