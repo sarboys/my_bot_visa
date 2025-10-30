@@ -653,8 +653,22 @@ function randomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-async function sendTelegramMessage(message) {
+// Переменная для отслеживания времени последнего сообщения
+let lastTelegramMessageTime = 0
+const TELEGRAM_MESSAGE_DELAY = 1100 // 1.1 секунды между сообщениями
+
+async function sendTelegramMessage(message, retries = 3) {
   try {
+    // Проверяем, прошло ли достаточно времени с последнего сообщения
+    const now = Date.now()
+    const timeSinceLastMessage = now - lastTelegramMessageTime
+    
+    if (timeSinceLastMessage < TELEGRAM_MESSAGE_DELAY) {
+      const waitTime = TELEGRAM_MESSAGE_DELAY - timeSinceLastMessage
+      log(`⏳ Waiting ${waitTime}ms before sending Telegram message to avoid rate limit`)
+      await sleep(waitTime / 1000)
+    }
+    
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
     const response = await fetch(url, {
       method: 'POST',
@@ -668,11 +682,32 @@ async function sendTelegramMessage(message) {
       })
     })
     
+    lastTelegramMessageTime = Date.now()
+    
     if (!response.ok) {
-      log(`Failed to send Telegram message: ${response.status} ${response.statusText}`)
+      if (response.status === 429 && retries > 0) {
+        // Получаем время ожидания из заголовка Retry-After
+        const retryAfter = response.headers.get('Retry-After') || 1
+        const waitSeconds = parseInt(retryAfter)
+        
+        log(`⚠️ Rate limited (429). Waiting ${waitSeconds} seconds before retry. Retries left: ${retries}`)
+        await sleep(waitSeconds)
+        
+        return await sendTelegramMessage(message, retries - 1)
+      } else {
+        log(`❌ Failed to send Telegram message: ${response.status} ${response.statusText}`)
+      }
+    } else {
+      log(`✅ Telegram message sent successfully`)
     }
   } catch (error) {
-    log(`Error sending Telegram message: ${error.message}`)
+    if (retries > 0) {
+      log(`⚠️ Error sending Telegram message, retrying in 2 seconds. Retries left: ${retries}`)
+      await sleep(2)
+      return await sendTelegramMessage(message, retries - 1)
+    } else {
+      log(`❌ Error sending Telegram message after all retries: ${error.message}`)
+    }
   }
 }
 
