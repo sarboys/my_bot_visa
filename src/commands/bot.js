@@ -30,30 +30,9 @@ export async function botCommand(options) {
   log(`Search range: ${minDate} to ${targetDate}`);
 
   log(`=== Starting search loop ===`);
+
   try {
-              pm2.connect((err) => {
-                if (err) {
-                  log(`PM2 connect error: ${err.message}`);
-                  process.exit(0);
-                  return;
-                }
-                
-                pm2.stop(0, (err) => {
-                  if (err) {
-                    log(`PM2 stop error: ${err.message}`);
-                  } else {
-                    log('PM2 process stopped successfully');
-                  }
-                  pm2.disconnect();
-                  process.exit(0);
-                });
-              });
-            } catch (error) {
-              log(`Error stopping PM2: ${error.message}`);
-              process.exit(0);
-            }
-  try {
-    const sessionHeaders = await bot.initialize();
+    const sessionHeaders = await bot.initialize(); 
 
     while (true) {
       const availableDate = await bot.checkAvailableDate(
