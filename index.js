@@ -3,6 +3,10 @@
 import fetch from "node-fetch";
 import cheerio from 'cheerio';
 import dotenv from 'dotenv';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 dotenv.config();
 
@@ -282,7 +286,11 @@ async function main() {
               if (bookingSuccessful) {
                 log(`🎉 Successfully booked ${dateResponse.date} ${timeResponse.time}`)
                 await sendSpecialTelegramMessage(`🎉🎉🎉 УСПЕШНАЯ ЗАПИСЬ! 🎉🎉🎉\n\n✅ Appointment successfully booked for ${EMAIL}:\n📅 Date: ${dateResponse.date}\n⏰ Time: ${timeResponse.time}\n\n🎯 Monitoring stopped. Mission accomplished! #success #booked`)
-                log(`Booking completed successfully. Stopping monitoring.`)
+                
+                // Останавливаем PM2 процесс после успешной записи
+                log(`Booking completed successfully. Stopping PM2 process and monitoring.`)
+                await stopPM2Process()
+                
                 process.exit(0) // Останавливаем процесс после успешной записи
               } else {
                 log(`❌ Booking verification failed for ${dateResponse.date} ${timeResponse.time}`)
@@ -695,6 +703,26 @@ async function sendSpecialTelegramMessage(message) {
 function log(message) {
   const timestamp = new Date().toISOString()
   console.log(`[${timestamp}] ${message}`)
+}
+
+async function stopPM2Process() {
+  try {
+    log('🛑 Attempting to stop PM2 process...')
+    const { stdout, stderr } = await execAsync('pm2 stop 0')
+    
+    if (stderr && !stderr.includes('already stopped')) {
+      log(`⚠️ PM2 stop stderr: ${stderr}`)
+    }
+    
+    log(`✅ PM2 stop command executed: ${stdout.trim()}`)
+    await sendSpecialTelegramMessage(`🛑 PM2 process stopped successfully after booking completion for ${EMAIL}`)
+    
+    return true
+  } catch (error) {
+    log(`❌ Failed to stop PM2 process: ${error.message}`)
+    await sendSpecialTelegramMessage(`⚠️ Failed to stop PM2 process for ${EMAIL}: ${error.message}`)
+    return false
+  }
 }
 
 main()
