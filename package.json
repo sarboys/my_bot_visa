@@ -1,29 +1,22 @@
 {
   "name": "us-visa-bot",
-  "version": "2.0.0",
-  "description": "US Visa Appointment Booking Bot with modular architecture",
+  "version": "0.0.1",
+  "description": "",
   "type": "module",
-  "main": "index_new.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index_new.js",
-    "dev": "node index_new.js --dry-run",
-    "old": "node index.js"
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "echo \"No linter configured\"",
+    "dev": "node src/index.js"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "dotenv": "^17.2.3",
-    "node-fetch": "^3.3.2"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "keywords": [
-    "visa",
-    "appointment",
-    "bot",
-    "automation",
-    "us-visa"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+    "cheerio": "^1.0.0-rc.10",
+    "commander": "^9.5.0",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^2.7.0",
+    "pm2": "^6.0.13"
+  }
 }
