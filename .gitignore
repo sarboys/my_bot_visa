@@ -1,5 +1,4 @@
 node_modules/*
 visa-bot-manager/
 .env
-lib/
 index_new.js
