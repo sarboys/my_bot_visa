@@ -1,6 +1,6 @@
 import { Bot } from '../lib/bot.js';
 import { getConfig } from '../lib/config.js';
-import { log, sleep, isSocketHangupError, sendErrorNotification, getRandomDelay } from '../lib/utils.js';
+import { log, sleep, isSocketHangupError, sendErrorNotification } from '../lib/utils.js';
 import pm2 from 'pm2';
 
 const COOLDOWN = 300;
@@ -20,7 +20,7 @@ export async function botCommand(options) {
   log(`Country Code: ${config.countryCode}`);
   log(`Schedule ID: ${config.scheduleId}`);
   log(`Facility ID: ${config.facilityId}`);
-  log(`Random Delay: 10-30 seconds (randomized for each request)`);
+  log(`Random Delay: 10-30 seconds (applied only to date checking requests)`);
   log(`Days Before Booking: ${config.daysBeforeBooking}`);
 
   log(`Minimum acceptable date: ${minDate}`);
@@ -82,10 +82,8 @@ export async function botCommand(options) {
         }
       }
 
-      // Use random delay between 10-30 seconds for each request
-      const randomDelay = getRandomDelay();
-      log(`Waiting ${randomDelay} seconds before next check...`);
-      await sleep(randomDelay);
+      // Continue immediately to next iteration without delay
+      // (delay is now handled inside checkAvailableDate method)
     }
   } catch (err) {
     if (isSocketHangupError(err)) {

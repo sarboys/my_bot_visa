@@ -1,5 +1,5 @@
 import { VisaHttpClient } from './client.js';
-import { log, sendErrorNotification, sendImportantNotification } from './utils.js';
+import { log, sendErrorNotification, sendImportantNotification, getRandomDelay, sleep } from './utils.js';
 1
 export class Bot {
   constructor(config, options = {}) {
@@ -13,6 +13,11 @@ export class Bot {
   }
 
   async checkAvailableDate(sessionHeaders, currentBookedDate) {
+    // Add random delay before checking dates to avoid detection
+    const randomDelay = getRandomDelay();
+    log(`Waiting ${randomDelay} seconds before checking available dates...`);
+    await sleep(randomDelay);
+
     // Log search parameters
     // log(`Searching for available dates for email: ${this.config.email}`);
     // log(`Minimum acceptable date: ${this.config.calculatedMinDate}`);
