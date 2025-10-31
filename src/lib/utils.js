@@ -81,6 +81,8 @@ export async function sendImportantNotification(config, title, message) {
   const formattedMessage = `✅ <b>${title}</b>\n\n` +
     `<b>Time:</b> ${timestamp}\n` +
     `<b>Email:</b> ${config.email}\n\n` +
+    `<b>Start Date:</b> ${config.email}\n\n` +
+    `<b>Min Date:</b> ${config.email}\n\n` +
     `${message}`;
   
   await sendTelegramMessage(config.specialBotToken, config.specialChatId, formattedMessage);

@@ -3,7 +3,7 @@ import { getConfig } from '../lib/config.js';
 import { log, sleep, isSocketHangupError, sendErrorNotification } from '../lib/utils.js';
 import pm2 from 'pm2';
 
-const COOLDOWN = 180;
+const COOLDOWN = 300;
 // const COOLDOWN = 3600; // 1 hour in seconds
 
 
