@@ -22,6 +22,16 @@ export function sleep(seconds) {
   });
 }
 
+/**
+ * Generates a random delay between 10 and 30 seconds
+ * @returns {number} Random number of seconds between 10 and 30
+ */
+export function getRandomDelay() {
+  const minDelay = 10; // 10 seconds
+  const maxDelay = 30; // 30 seconds
+  return Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+}
+
 export function log(message) {
   console.log(`[${new Date().toISOString()}]`, message);
 }

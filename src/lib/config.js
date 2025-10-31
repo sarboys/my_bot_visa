@@ -9,7 +9,7 @@ export function getConfig() {
     scheduleId: process.env.SCHEDULE_ID,
     facilityId: process.env.FACILITY_ID,
     countryCode: process.env.COUNTRY_CODE,
-    refreshDelay: Number(process.env.REFRESH_DELAY || 3),
+    //refreshDelay: Number(process.env.REFRESH_DELAY || 3),
     minDate: process.env.MIN_DATE,
     maxDate: process.env.MAX_DATE,
     daysBeforeBooking: Number(process.env.DAYS_BEFORE_BOOKING || 0),
