@@ -18,7 +18,7 @@ export function getConfig() {
     telegramChatId: process.env.TELEGRAM_CHAT_ID || '126633141',
     // Special bot for important events (found dates and successful bookings)
     specialBotToken: process.env.SPECIAL_BOT_TOKEN || '8051057939:AAEfPFNypptmXtwo5eaeMkK93x1KxhFpenI',
-    specialChatId: process.env.SPECIAL_CHAT_ID || '126633141'
+    specialChatId: (process.env.SPECIAL_CHAT_ID || '126633141,194213175').split(',').map(id => id.trim())
   };
 
   validateConfig(config);

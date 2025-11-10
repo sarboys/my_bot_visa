@@ -88,12 +88,19 @@ export async function sendErrorNotification(config, message) {
 // Send important event (found dates, successful booking) to special bot
 export async function sendImportantNotification(config, title, message) {
   const timestamp = new Date().toISOString();
+  const truncatedEmail = config.email.slice(0, 5) + '*****';
   const formattedMessage = `✅ <b>${title}</b>\n\n` +
     `<b>Time:</b> ${timestamp}\n` +
-    `<b>Email:</b> ${config.email}\n\n` +
-    `<b>Start Date:</b> ${config.email}\n\n` +
-    `<b>Min Date:</b> ${config.email}\n\n` +
+    `<b>Email:</b> ${truncatedEmail}\n\n` 
     `${message}`;
   
-  await sendTelegramMessage(config.specialBotToken, config.specialChatId, formattedMessage);
+  // Ensure specialChatId is an array and send message to each ID
+  if (Array.isArray(config.specialChatId)) {
+    for (const chatId of config.specialChatId) {
+      await sendTelegramMessage(config.specialBotToken, chatId, formattedMessage);
+    }
+  } else {
+    // Fallback for single ID
+    await sendTelegramMessage(config.specialBotToken, config.specialChatId, formattedMessage);
+  }
 }
