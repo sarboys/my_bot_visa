@@ -82,7 +82,15 @@ export async function sendErrorNotification(config, message) {
   const formattedMessage = 
     `📅 ${message}`;
   
-  await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, formattedMessage);
+  // Ensure telegramChatId is an array and send message to each ID
+  if (Array.isArray(config.telegramChatId)) {
+    for (const chatId of config.telegramChatId) {
+      await sendTelegramMessage(config.telegramBotToken, chatId, formattedMessage);
+    }
+  } else {
+    // Fallback for single ID
+    await sendTelegramMessage(config.telegramBotToken, config.telegramChatId, formattedMessage);
+  }
 }
 
 // Send important event (found dates, successful booking) to special bot
