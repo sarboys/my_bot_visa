@@ -26,8 +26,10 @@ export async function botCommand(options) {
   log(`Minimum acceptable date: ${minDate}`);
   log(`Maximum target date: ${targetDate}`);
 
-  // Show search range summary
-  log(`Search range: ${minDate} to ${targetDate}`);
+  // Show search ranges summary (supports multiple intervals)
+  const rangesSummary = (config.dateRanges || [{ start_date: minDate, end_date: targetDate }])
+    .map(r => `${r.start_date}..${r.end_date}`).join(', ');
+  log(`Search ranges: ${rangesSummary}`);
 
   log(`=== Starting search loop ===`);
 
