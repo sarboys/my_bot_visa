@@ -1,4 +1,5 @@
 import { VisaHttpClient } from './client.js';
+import { calculateStartDate } from './config.js';
 import { log, sendErrorNotification, sendImportantNotification, getRandomDelay, sleep } from './utils.js';
 1
 export class Bot {
@@ -43,6 +44,9 @@ export class Bot {
     }
 
     log(`Found ${dates.length} available dates: ${dates.join(', ')}`);
+    const rangesSummary = (this.config.dateRanges || [{ start_date: this.config.calculatedMinDate, end_date: this.config.maxDate }])
+      .map(r => `${r.start_date}..${r.end_date}`).join(', ');
+    log(`Search ranges: ${rangesSummary}`);
     
     // Send notification about found dates
     if (dates.length > 0) {
@@ -56,17 +60,19 @@ export class Bot {
         log(`date ${date} is further than already booked (${currentBookedDate})`);
         return false;
       }
-
-      if (date < this.config.calculatedMinDate) {
-        log(`date ${date} is before minimum date (${this.config.calculatedMinDate})`);
+      // In-range check across multiple intervals
+      const inAnyRange = (this.config.dateRanges || [{ start_date: this.config.calculatedMinDate, end_date: this.config.maxDate }])
+        .some(r => {
+          const start = calculateStartDate(r.start_date, this.config.daysBeforeBooking);
+          const end = r.end_date;
+          const ok = date >= start && date <= end;
+          if (!ok) return false;
+          return true;
+        });
+      if (!inAnyRange) {
+        log(`date ${date} is outside specified ranges`);
         return false;
       }
-
-      if (date > this.config.maxDate) {
-        log(`date ${date} is after maximum date (${this.config.maxDate})`);
-        return false;
-      }
-
       return true;
     });
 
