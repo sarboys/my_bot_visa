@@ -96,10 +96,10 @@ export async function sendErrorNotification(config, message) {
 // Send important event (found dates, successful booking) to special bot
 export async function sendImportantNotification(config, title, message) {
   const timestamp = new Date().toISOString();
-  const truncatedEmail = config.email.slice(0, 5) + '*****';
+  const truncatedEmail = (email) => (email ? email.slice(0, 5) + '*****' : '');
   const formattedMessage = `✅ <b>${title}</b>\n\n` +
     `<b>Time:</b> ${timestamp}\n` +
-    `<b>Email:</b> ${truncatedEmail}\n\n` 
+    `<b>Email:</b> ${truncatedEmail(config.email)}\n\n` +
     `${message}`;
   
   // Ensure specialChatId is an array and send message to each ID
