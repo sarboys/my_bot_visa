@@ -101,20 +101,14 @@ export class VisaHttpClient {
     log(`Response URL: ${response.url}`);
     log(`Response Headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
     
-    // Попытаемся получить текст ответа для логирования
+    // Попытаемся получить текст ответа для логирования и извлечения алертов
+    let alerts = [];
     try {
       const responseText = await response.text();
-      log(`Response Body Length: ${responseText.length} characters`);
-      log(`=== FULL RESPONSE BODY ===`);
-      log(responseText);
-      log(`=== END OF RESPONSE BODY ===`);
-      
-      // Если ответ содержит HTML, попробуем найти важную информацию
       if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
         const $ = cheerio.load(responseText);
+        alerts = $('.alert, .notice, .error, .success').map((i, el) => $(el).text().trim()).get();
         const title = $('title').text();
-        const alerts = $('.alert, .notice, .error, .success').map((i, el) => $(el).text().trim()).get();
-        
         if (title) log(`Page Title: ${title}`);
         if (alerts.length > 0) log(`Page Alerts: ${JSON.stringify(alerts)}`);
       }
@@ -122,7 +116,13 @@ export class VisaHttpClient {
       log(`Error reading response body: ${error.message}`);
     }
 
-    return response;
+    const busy = alerts.some(a => a.includes('System is busy. Please try again later.'));
+    return {
+      status: response.status,
+      url: response.url,
+      alerts,
+      busy
+    };
   }
 
   // Private request methods

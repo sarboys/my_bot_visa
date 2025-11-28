@@ -37,9 +37,9 @@ export class Bot {
     );
 
     if (!dates || dates.length === 0) {
-      const message = `No dates available for: ${this.config.email}`;
-      log(message);
-      await sendErrorNotification(this.config, message);
+      //const message = `No dates available for: ${this.config.email}`;
+      //log(message);
+      //await sendErrorNotification(this.config, message);
       return null;
     }
 
@@ -107,20 +107,23 @@ export class Bot {
       return false;
     }
 
-    await this.client.book(
+    const bookingResult = await this.client.book(
       sessionHeaders,
       this.config.scheduleId,
       this.config.facilityId,
       date,
       time
     );
+    
+    if (bookingResult?.busy) {
+      const msg = `❌ Booking failed: System is busy. Please try again later.\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n<b>Alerts:</b> ${bookingResult.alerts && bookingResult.alerts.length ? bookingResult.alerts.join(' | ') : 'none'}`;
+      await sendImportantNotification(this.config, 'BOOKING FAILED', msg);
+      return false;
+    }
 
     log(`booked time at ${date} ${time}`);
-    
-    // Send notification about successful booking
     const message = `🎉 <b>APPOINTMENT SUCCESSFULLY BOOKED!</b>\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n\n<b>Facility ID:</b> ${this.config.facilityId}\n<b>Schedule ID:</b> ${this.config.scheduleId}`;
     await sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
-    
     return true;
   }
 
