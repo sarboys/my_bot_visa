@@ -130,6 +130,8 @@ export class VisaHttpClient {
     return fetch(url, {
       headers: getHeadersWithUserAgent(this.userAgent, {
         "Accept": "*/*",
+        "Referer": this.baseUri,
+        "Referrer-Policy": "strict-origin-when-cross-origin",
         ...headers
       })
     });
@@ -162,6 +164,8 @@ export class VisaHttpClient {
   async _submitFormWithRedirect(url, headers = {}, formData = {}) {
     const finalHeaders = getHeadersWithUserAgent(this.userAgent, {
       'Content-Type': 'application/x-www-form-urlencoded',
+      'Referer': this.baseUri,
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
       ...headers
     });
     
