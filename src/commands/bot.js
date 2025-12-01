@@ -1,5 +1,5 @@
 import { Bot } from '../lib/bot.js';
-import { getConfig } from '../lib/config.js';
+import { getConfig, calculateStartDate } from '../lib/config.js';
 import { log, sleep, isSocketHangupError, sendErrorNotification } from '../lib/utils.js';
 import pm2 from 'pm2';
 
@@ -54,10 +54,14 @@ export async function botCommand(options) {
             current: currentBookedDate
           };
 
-          if (targetDate && availableDate <= targetDate) {
-            log(`Target date reached! Successfully booked appointment on ${availableDate}`);
-            
-            // Stop PM2 process after successful booking
+          const inAnyRange = (config.dateRanges || [{ start_date: config.calculatedMinDate, end_date: targetDate }])
+            .some(r => {
+              const start = calculateStartDate(r.start_date, config.daysBeforeBooking);
+              const end = r.end_date;
+              return availableDate >= start && availableDate <= end;
+            });
+
+          if (inAnyRange) {
             try {
               pm2.connect((err) => {
                 if (err) {
@@ -65,7 +69,6 @@ export async function botCommand(options) {
                   process.exit(0);
                   return;
                 }
-                
                 pm2.stop(0, (err) => {
                   if (err) {
                     log(`PM2 stop error: ${err.message}`);
