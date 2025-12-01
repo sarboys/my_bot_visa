@@ -95,36 +95,38 @@ export class Bot {
   }
 
   async bookAppointment(sessionHeaders, date) {
-    const time = await this.client.checkAvailableTime(
+    const times = await this.client.getAvailableTimes(
       sessionHeaders,
       this.config.scheduleId,
       this.config.facilityId,
       date
     );
 
-    if (!time) {
+    if (!times || times.length === 0) {
       log(`no available time slots for date ${date}`);
       return false;
     }
 
-    const bookingResult = await this.client.book(
-      sessionHeaders,
-      this.config.scheduleId,
-      this.config.facilityId,
-      date,
-      time
-    );
-    
-    if (bookingResult?.busy) {
-      const msg = `❌ Booking failed: System is busy. Please try again later.\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n<b>Alerts:</b> ${bookingResult.alerts && bookingResult.alerts.length ? bookingResult.alerts.join(' | ') : 'none'}`;
-      await sendImportantNotification(this.config, 'BOOKING FAILED', msg);
-      return false;
+    for (const time of [...times].reverse()) {
+      log(`trying time ${time} for date ${date}`);
+      const bookingResult = await this.client.book(
+        sessionHeaders,
+        this.config.scheduleId,
+        this.config.facilityId,
+        date,
+        time
+      );
+      if (bookingResult?.busy) {
+        const msg = `❌ Booking failed: System is busy. Please try again later.\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n<b>Alerts:</b> ${bookingResult.alerts && bookingResult.alerts.length ? bookingResult.alerts.join(' | ') : 'none'}`;
+        await sendImportantNotification(this.config, 'BOOKING FAILED', msg);
+        continue;
+      }
+      log(`booked time at ${date} ${time}`);
+      const message = `🎉 <b>APPOINTMENT SUCCESSFULLY BOOKED!</b>\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n\n<b>Facility ID:</b> ${this.config.facilityId}\n<b>Schedule ID:</b> ${this.config.scheduleId}`;
+      await sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
+      return true;
     }
-
-    log(`booked time at ${date} ${time}`);
-    const message = `🎉 <b>APPOINTMENT SUCCESSFULLY BOOKED!</b>\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n\n<b>Facility ID:</b> ${this.config.facilityId}\n<b>Schedule ID:</b> ${this.config.scheduleId}`;
-    await sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
-    return true;
+    return false;
   }
 
 }

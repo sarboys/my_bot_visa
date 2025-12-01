@@ -65,6 +65,18 @@ export class VisaHttpClient {
       .then(data => data['business_times'][0] || data['available_times'][0]);
   }
 
+  async getAvailableTimes(headers, scheduleId, facilityId, date) {
+    const url = `${this.baseUri}/schedule/${scheduleId}/appointment/times/${facilityId}.json?date=${date}&appointments[expedite]=false`;
+    log(`Checking available times for ${date}: ${url}`);
+    return this._jsonRequest(url, headers)
+      .then(data => {
+        const list = Array.isArray(data['business_times']) && data['business_times'].length
+          ? data['business_times']
+          : (Array.isArray(data['available_times']) ? data['available_times'] : []);
+        return list.filter(Boolean);
+      });
+  }
+
   async book(headers, scheduleId, facilityId, date, time) {
     const url = `${this.baseUri}/schedule/${scheduleId}/appointment`;
 
