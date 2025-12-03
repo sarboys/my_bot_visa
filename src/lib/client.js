@@ -28,7 +28,7 @@ export class VisaHttpClient {
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
     log(`Using User-Agent for session: ${this.userAgent}`);
-    this.agent = new https.Agent({ keepAlive: true });
+    this.agent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 4, maxFreeSockets: 2 });
   }
 
   // Public API methods
