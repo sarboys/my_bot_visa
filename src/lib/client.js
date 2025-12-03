@@ -1,5 +1,4 @@
 import fetch from "node-fetch";
-import https from 'node:https';
 import * as cheerio from 'cheerio';
 import { log, getRandomUserAgent } from './utils.js';
 import { getBaseUri } from './config.js';
@@ -7,7 +6,7 @@ import { getBaseUri } from './config.js';
 // Common headers
 const COMMON_HEADERS = {
   'Accept-Encoding': 'gzip, deflate, br',
-  'Connection': 'keep-alive',
+  'Connection': 'close',
   'Cache-Control': 'no-store'
 };
 
@@ -28,7 +27,6 @@ export class VisaHttpClient {
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
     log(`Using User-Agent for session: ${this.userAgent}`);
-    this.agent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 4, maxFreeSockets: 2 });
   }
 
   // Public API methods
@@ -153,8 +151,7 @@ export class VisaHttpClient {
         "Referer": this.baseUri,
         "Referrer-Policy": "strict-origin-when-cross-origin",
         ...headers
-      }),
-      agent: this.agent
+      })
     });
   }
 
@@ -165,8 +162,7 @@ export class VisaHttpClient {
         "X-Requested-With": "XMLHttpRequest",
         ...headers
       }),
-      cache: "no-store",
-      agent: this.agent
+      cache: "no-store"
     })
       .then(r => r.json())
       .then(r => this._handleErrors(r));
@@ -179,8 +175,7 @@ export class VisaHttpClient {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         ...headers
       }),
-      body: new URLSearchParams(formData),
-      agent: this.agent
+      body: new URLSearchParams(formData)
     });
   }
 
@@ -206,8 +201,7 @@ export class VisaHttpClient {
       method: "POST",
       redirect: "follow",
       headers: finalHeaders,
-      body: new URLSearchParams(formData),
-      agent: this.agent
+      body: new URLSearchParams(formData)
     });
 
     log(`=== FORM SUBMISSION RESPONSE ===`);
