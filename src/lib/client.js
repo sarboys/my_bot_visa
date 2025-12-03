@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import https from 'node:https';
 import * as cheerio from 'cheerio';
 import { log, getRandomUserAgent } from './utils.js';
 import { getBaseUri } from './config.js';
@@ -27,6 +28,7 @@ export class VisaHttpClient {
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
     log(`Using User-Agent for session: ${this.userAgent}`);
+    this.agent = new https.Agent({ keepAlive: true });
   }
 
   // Public API methods
@@ -77,7 +79,13 @@ export class VisaHttpClient {
       });
   }
 
-  async book(headers, scheduleId, facilityId, date, time) {
+  async getBookingHeaders(headers, scheduleId) {
+    const url = `${this.baseUri}/schedule/${scheduleId}/appointment`;
+    const resp = await this._anonymousRequest(url, headers);
+    return this._extractHeaders(resp);
+  }
+
+  async book(headers, scheduleId, facilityId, date, time, bookingHeadersOverride) {
     const url = `${this.baseUri}/schedule/${scheduleId}/appointment`;
 
     log(`=== BOOKING REQUEST DETAILS ===`);
@@ -87,7 +95,7 @@ export class VisaHttpClient {
     log(`Facility ID: ${facilityId}`);
     log(`Schedule ID: ${scheduleId}`);
 
-    const bookingHeaders = await this._anonymousRequest(url, headers)
+    const bookingHeaders = bookingHeadersOverride || await this._anonymousRequest(url, headers)
       .then(response => this._extractHeaders(response));
 
     const bookingData = {
@@ -145,7 +153,8 @@ export class VisaHttpClient {
         "Referer": this.baseUri,
         "Referrer-Policy": "strict-origin-when-cross-origin",
         ...headers
-      })
+      }),
+      agent: this.agent
     });
   }
 
@@ -156,7 +165,8 @@ export class VisaHttpClient {
         "X-Requested-With": "XMLHttpRequest",
         ...headers
       }),
-      cache: "no-store"
+      cache: "no-store",
+      agent: this.agent
     })
       .then(r => r.json())
       .then(r => this._handleErrors(r));
@@ -169,7 +179,8 @@ export class VisaHttpClient {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         ...headers
       }),
-      body: new URLSearchParams(formData)
+      body: new URLSearchParams(formData),
+      agent: this.agent
     });
   }
 
@@ -184,21 +195,26 @@ export class VisaHttpClient {
     log(`=== FORM SUBMISSION DETAILS ===`);
     log(`URL: ${url}`);
     log(`Method: POST`);
-    log(`Headers:`, JSON.stringify(finalHeaders, null, 2));
-    log(`Form Data:`, JSON.stringify(formData, null, 2));
-    log(`URL Encoded Body: ${new URLSearchParams(formData).toString()}`);
+    const headerKeys = Object.keys(finalHeaders);
+    const formKeys = Object.keys(formData);
+    const bodyStr = new URLSearchParams(formData).toString();
+    log(`Header Keys: ${headerKeys.join(', ')}`);
+    log(`Form Keys: ${formKeys.join(', ')}`);
+    log(`Body Length: ${bodyStr.length}`);
     
     const response = await fetch(url, {
       method: "POST",
       redirect: "follow",
       headers: finalHeaders,
-      body: new URLSearchParams(formData)
+      body: new URLSearchParams(formData),
+      agent: this.agent
     });
 
     log(`=== FORM SUBMISSION RESPONSE ===`);
     log(`Status: ${response.status} ${response.statusText}`);
     log(`Final URL after redirects: ${response.url}`);
-    log(`Response Headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
+    const hdr = Object.fromEntries(response.headers.entries());
+    log(`Response Header Keys: ${Object.keys(hdr).join(', ')}`);
 
     return response;
   }

@@ -107,6 +107,14 @@ export class Bot {
       return false;
     }
 
+    const timesMsg = `⏰ <b>Available Times Found:</b>\n${times.map(t => `• ${t}`).join('\n')}\n\n<b>Date:</b> ${date}`;
+    await sendImportantNotification(this.config, 'Available Times Found', timesMsg);
+
+    const bookingHeaders = await this.client.getBookingHeaders(
+      sessionHeaders,
+      this.config.scheduleId
+    );
+
     for (const time of [...times].reverse()) {
       log(`trying time ${time} for date ${date}`);
       const bookingResult = await this.client.book(
@@ -114,7 +122,8 @@ export class Bot {
         this.config.scheduleId,
         this.config.facilityId,
         date,
-        time
+        time,
+        bookingHeaders
       );
       if (bookingResult?.busy) {
         const msg = `❌ Booking failed: System is busy. Please try again later.\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n<b>Alerts:</b> ${bookingResult.alerts && bookingResult.alerts.length ? bookingResult.alerts.join(' | ') : 'none'}`;
