@@ -1,4 +1,5 @@
 import fetch from "node-fetch";
+import https from 'node:https';
 import * as cheerio from 'cheerio';
 import { log, getRandomUserAgent } from './utils.js';
 import { getBaseUri } from './config.js';
@@ -27,6 +28,7 @@ export class VisaHttpClient {
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
     // log(`Using User-Agent for session: ${this.userAgent}`);
+    this.bookingAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 4, maxFreeSockets: 2 });
   }
 
   // Public API methods
@@ -184,6 +186,7 @@ export class VisaHttpClient {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Referer': this.baseUri,
       'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Connection': 'keep-alive',
       ...headers
     });
     
@@ -201,7 +204,8 @@ export class VisaHttpClient {
       method: "POST",
       redirect: "follow",
       headers: finalHeaders,
-      body: new URLSearchParams(formData)
+      body: new URLSearchParams(formData),
+      agent: this.bookingAgent
     });
 
     // log(`=== FORM SUBMISSION RESPONSE ===`);
