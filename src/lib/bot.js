@@ -9,14 +9,14 @@ export class Bot {
   }
 
   async initialize() {
-    log('Initializing visa bot...');
+    // log('Initializing visa bot...');
     return await this.client.login();
   }
 
   async checkAvailableDate(sessionHeaders, currentBookedDate) {
     // Add random delay before checking dates to avoid detection
     const randomDelay = getRandomDelay();
-    log(`Waiting ${randomDelay} seconds before checking available dates...`);
+    // log(`Waiting ${randomDelay} seconds before checking available dates...`);
     await sleep(randomDelay);
 
     // Log search parameters
@@ -37,27 +37,22 @@ export class Bot {
     );
 
     if (!dates || dates.length === 0) {
-      //const message = `No dates available for: ${this.config.email}`;
-      //log(message);
-      //await sendErrorNotification(this.config, message);
       return null;
     }
 
-    log(`Found ${dates.length} available dates: ${dates.join(', ')}`);
-    const rangesSummary = (this.config.dateRanges || [{ start_date: this.config.calculatedMinDate, end_date: this.config.maxDate }])
-      .map(r => `${r.start_date}..${r.end_date}`).join(', ');
-    log(`Search ranges: ${rangesSummary}`);
+    // log(`Found ${dates.length} available dates: ${dates.join(', ')}`);
+    // const rangesSummary = (this.config.dateRanges || [{ start_date: this.config.calculatedMinDate, end_date: this.config.maxDate }])
+    //   .map(r => `${r.start_date}..${r.end_date}`).join(', ');
+    // log(`Search ranges: ${rangesSummary}`);
     
-    // Send notification about found dates
-    if (dates.length > 0) {
-      const message = `📅 <b>Available Dates Found:</b>\n${dates.map(date => `• ${date}`).join('\n')}`;
-      await sendImportantNotification(this.config, 'Available Dates Found', message);
-    }
+    // if (dates.length > 0) {
+    //   const message = `📅 <b>Available Dates Found:</b>\n${dates.map(date => `• ${date}`).join('\n')}`;
+    //   await sendImportantNotification(this.config, 'Available Dates Found', message);
+    // }
 
     // Filter dates that are better than current booked date and within acceptable range
     const goodDates = dates.filter(date => {
       if (currentBookedDate && date >= currentBookedDate) {
-        log(`date ${date} is further than already booked (${currentBookedDate})`);
         return false;
       }
       // In-range check across multiple intervals
@@ -70,14 +65,12 @@ export class Bot {
           return true;
         });
       if (!inAnyRange) {
-        log(`date ${date} is outside specified ranges`);
         return false;
       }
       return true;
     });
 
     if (goodDates.length === 0) {
-      log("no good dates found after filtering");
       return null;
     }
 
@@ -85,11 +78,11 @@ export class Bot {
     goodDates.sort();
     const earliestDate = goodDates[0];
     
-    log(`found ${goodDates.length} good dates: ${goodDates.join(', ')}, using earliest: ${earliestDate}`);
+    // log(`found ${goodDates.length} good dates: ${goodDates.join(', ')}, using earliest: ${earliestDate}`);
     
     // Send notification about good dates
-    const message = `🎯 <b>Good Dates After Filtering:</b>\n${goodDates.map(date => `• ${date}`).join('\n')}\n\n<b>Selected Date:</b> ${earliestDate}`;
-    await sendImportantNotification(this.config, 'Good Dates Found', message);
+    // const message = `🎯 <b>Good Dates After Filtering:</b>\n${goodDates.map(date => `• ${date}`).join('\n')}\n\n<b>Selected Date:</b> ${earliestDate}`;
+    // await sendImportantNotification(this.config, 'Good Dates Found', message);
     
     return earliestDate;
   }
@@ -103,12 +96,11 @@ export class Bot {
     );
 
     if (!times || times.length === 0) {
-      log(`no available time slots for date ${date}`);
       return false;
     }
 
-    const timesMsg = `⏰ <b>Available Times Found:</b>\n${times.map(t => `• ${t}`).join('\n')}\n\n<b>Date:</b> ${date}`;
-    await sendImportantNotification(this.config, 'Available Times Found', timesMsg);
+    // const timesMsg = `⏰ <b>Available Times Found:</b>\n${times.map(t => `• ${t}`).join('\n')}\n\n<b>Date:</b> ${date}`;
+    // await sendImportantNotification(this.config, 'Available Times Found', timesMsg);
 
     const bookingHeaders = await this.client.getBookingHeaders(
       sessionHeaders,
@@ -116,7 +108,6 @@ export class Bot {
     );
 
     for (const time of [...times].reverse()) {
-      log(`trying time ${time} for date ${date}`);
       const bookingResult = await this.client.book(
         sessionHeaders,
         this.config.scheduleId,
@@ -130,7 +121,7 @@ export class Bot {
         await sendImportantNotification(this.config, 'BOOKING FAILED', msg);
         continue;
       }
-      log(`booked time at ${date} ${time}`);
+      // log(`booked time at ${date} ${time}`);
       const message = `🎉 <b>APPOINTMENT SUCCESSFULLY BOOKED!</b>\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n\n<b>Facility ID:</b> ${this.config.facilityId}\n<b>Schedule ID:</b> ${this.config.scheduleId}`;
       await sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
       return true;

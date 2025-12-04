@@ -26,12 +26,12 @@ export class VisaHttpClient {
     this.password = password;
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
-    log(`Using User-Agent for session: ${this.userAgent}`);
+    // log(`Using User-Agent for session: ${this.userAgent}`);
   }
 
   // Public API methods
   async login() {
-    log('Logging in');
+    // log('Logging in');
 
     const anonymousHeaders = await this._anonymousRequest(`${this.baseUri}/users/sign_in`)
       .then(response => this._extractHeaders(response));
@@ -59,7 +59,7 @@ export class VisaHttpClient {
 
   async checkAvailableTime(headers, scheduleId, facilityId, date) {
     const url = `${this.baseUri}/schedule/${scheduleId}/appointment/times/${facilityId}.json?date=${date}&appointments[expedite]=false`;
-    log(`Checking available times for ${date}: ${url}`);
+    // log(`Checking available times for ${date}: ${url}`);
     
     return this._jsonRequest(url, headers)
       .then(data => data['business_times'][0] || data['available_times'][0]);
@@ -67,7 +67,7 @@ export class VisaHttpClient {
 
   async getAvailableTimes(headers, scheduleId, facilityId, date) {
     const url = `${this.baseUri}/schedule/${scheduleId}/appointment/times/${facilityId}.json?date=${date}&appointments[expedite]=false`;
-    log(`Checking available times for ${date}: ${url}`);
+    // log(`Checking available times for ${date}: ${url}`);
     return this._jsonRequest(url, headers)
       .then(data => {
         const list = Array.isArray(data['business_times']) && data['business_times'].length
@@ -86,12 +86,12 @@ export class VisaHttpClient {
   async book(headers, scheduleId, facilityId, date, time, bookingHeadersOverride) {
     const url = `${this.baseUri}/schedule/${scheduleId}/appointment`;
 
-    log(`=== BOOKING REQUEST DETAILS ===`);
-    log(`Booking URL: ${url}`);
-    log(`Date: ${date}`);
-    log(`Time: ${time}`);
-    log(`Facility ID: ${facilityId}`);
-    log(`Schedule ID: ${scheduleId}`);
+    // log(`=== BOOKING REQUEST DETAILS ===`);
+    // log(`Booking URL: ${url}`);
+    // log(`Date: ${date}`);
+    // log(`Time: ${time}`);
+    // log(`Facility ID: ${facilityId}`);
+    // log(`Schedule ID: ${scheduleId}`);
 
     const bookingHeaders = bookingHeadersOverride || await this._anonymousRequest(url, headers)
       .then(response => this._extractHeaders(response));
@@ -109,15 +109,15 @@ export class VisaHttpClient {
       'appointments[asc_appointment][time]': ''
     };
 
-    log(`=== BOOKING FORM DATA ===`);
-    log(JSON.stringify(bookingData, null, 2));
+    // log(`=== BOOKING FORM DATA ===`);
+    // log(JSON.stringify(bookingData, null, 2));
 
     const response = await this._submitFormWithRedirect(url, bookingHeaders, bookingData);
     
-    log(`=== BOOKING RESPONSE ===`);
-    log(`Response Status: ${response.status} ${response.statusText}`);
-    log(`Response URL: ${response.url}`);
-    log(`Response Headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
+    // log(`=== BOOKING RESPONSE ===`);
+    // log(`Response Status: ${response.status} ${response.statusText}`);
+    // log(`Response URL: ${response.url}`);
+    // log(`Response Headers:`, JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
     
     // Попытаемся получить текст ответа для логирования и извлечения алертов
     let alerts = [];
@@ -127,11 +127,11 @@ export class VisaHttpClient {
         const $ = cheerio.load(responseText);
         alerts = $('.alert, .notice, .error, .success').map((i, el) => $(el).text().trim()).get();
         const title = $('title').text();
-        if (title) log(`Page Title: ${title}`);
-        if (alerts.length > 0) log(`Page Alerts: ${JSON.stringify(alerts)}`);
+        // if (title) log(`Page Title: ${title}`);
+        // if (alerts.length > 0) log(`Page Alerts: ${JSON.stringify(alerts)}`);
       }
     } catch (error) {
-      log(`Error reading response body: ${error.message}`);
+      // log(`Error reading response body: ${error.message}`);
     }
 
     const busy = alerts.some(a => a.includes('System is busy. Please try again later.'));
@@ -187,15 +187,15 @@ export class VisaHttpClient {
       ...headers
     });
     
-    log(`=== FORM SUBMISSION DETAILS ===`);
-    log(`URL: ${url}`);
-    log(`Method: POST`);
-    const headerKeys = Object.keys(finalHeaders);
-    const formKeys = Object.keys(formData);
-    const bodyStr = new URLSearchParams(formData).toString();
-    log(`Header Keys: ${headerKeys.join(', ')}`);
-    log(`Form Keys: ${formKeys.join(', ')}`);
-    log(`Body Length: ${bodyStr.length}`);
+    // log(`=== FORM SUBMISSION DETAILS ===`);
+    // log(`URL: ${url}`);
+    // log(`Method: POST`);
+    // const headerKeys = Object.keys(finalHeaders);
+    // const formKeys = Object.keys(formData);
+    // const bodyStr = new URLSearchParams(formData).toString();
+    // log(`Header Keys: ${headerKeys.join(', ')}`);
+    // log(`Form Keys: ${formKeys.join(', ')}`);
+    // log(`Body Length: ${bodyStr.length}`);
     
     const response = await fetch(url, {
       method: "POST",
@@ -204,11 +204,11 @@ export class VisaHttpClient {
       body: new URLSearchParams(formData)
     });
 
-    log(`=== FORM SUBMISSION RESPONSE ===`);
-    log(`Status: ${response.status} ${response.statusText}`);
-    log(`Final URL after redirects: ${response.url}`);
-    const hdr = Object.fromEntries(response.headers.entries());
-    log(`Response Header Keys: ${Object.keys(hdr).join(', ')}`);
+    // log(`=== FORM SUBMISSION RESPONSE ===`);
+    // log(`Status: ${response.status} ${response.statusText}`);
+    // log(`Final URL after redirects: ${response.url}`);
+    // const hdr = Object.fromEntries(response.headers.entries());
+    // log(`Response Header Keys: ${Object.keys(hdr).join(', ')}`);
 
     return response;
   }
