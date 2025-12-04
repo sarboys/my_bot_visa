@@ -16,7 +16,7 @@ export class Bot {
   async checkAvailableDate(sessionHeaders, currentBookedDate) {
     // Add random delay before checking dates to avoid detection
     const randomDelay = getRandomDelay();
-    // log(`Waiting ${randomDelay} seconds before checking available dates...`);
+    log(`Waiting ${randomDelay} seconds before checking available dates...`);
     await sleep(randomDelay);
 
     // Log search parameters
