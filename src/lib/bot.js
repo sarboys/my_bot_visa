@@ -45,10 +45,10 @@ export class Bot {
     //   .map(r => `${r.start_date}..${r.end_date}`).join(', ');
     // log(`Search ranges: ${rangesSummary}`);
     
-    // if (dates.length > 0) {
-    //   const message = `📅 <b>Available Dates Found:</b>\n${dates.map(date => `• ${date}`).join('\n')}`;
-    //   await sendImportantNotification(this.config, 'Available Dates Found', message);
-    // }
+     if (dates.length > 0) {
+       const message = `📅 <b>Available Dates Found:</b>\n${dates.map(date => `• ${date}`).join('\n')}`;
+       sendImportantNotification(this.config, 'Available Dates Found', message);
+     }
 
     // Filter dates that are better than current booked date and within acceptable range
     const goodDates = dates.filter(date => {
@@ -99,8 +99,8 @@ export class Bot {
       return false;
     }
 
-    // const timesMsg = `⏰ <b>Available Times Found:</b>\n${times.map(t => `• ${t}`).join('\n')}\n\n<b>Date:</b> ${date}`;
-    // await sendImportantNotification(this.config, 'Available Times Found', timesMsg);
+     const timesMsg = `⏰ <b>Available Times Found:</b>\n${times.map(t => `• ${t}`).join('\n')}\n\n<b>Date:</b> ${date}`;
+     sendImportantNotification(this.config, 'Available Times Found', timesMsg);
 
     const bookingHeaders = await this.client.getBookingHeaders(
       sessionHeaders,
@@ -118,12 +118,12 @@ export class Bot {
       );
       if (bookingResult?.busy) {
         const msg = `❌ Booking failed: System is busy. Please try again later.\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n<b>Alerts:</b> ${bookingResult.alerts && bookingResult.alerts.length ? bookingResult.alerts.join(' | ') : 'none'}`;
-        await sendImportantNotification(this.config, 'BOOKING FAILED', msg);
+        sendImportantNotification(this.config, 'BOOKING FAILED', msg);
         continue;
       }
       // log(`booked time at ${date} ${time}`);
       const message = `🎉 <b>APPOINTMENT SUCCESSFULLY BOOKED!</b>\n\n<b>Date:</b> ${date}\n<b>Time:</b> ${time}\n\n<b>Facility ID:</b> ${this.config.facilityId}\n<b>Schedule ID:</b> ${this.config.scheduleId}`;
-      await sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
+      sendImportantNotification(this.config, 'SUCCESSFUL BOOKING', message);
       return true;
     }
     return false;

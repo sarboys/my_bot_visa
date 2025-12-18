@@ -27,8 +27,8 @@ export function sleep(seconds) {
  * @returns {number} Random number of seconds between 10 and 30
  */
 export function getRandomDelay() {
-  const minDelay = 10; // 10 seconds
-  const maxDelay = 20; // 20 seconds  
+  const minDelay = 3; // 10 seconds
+  const maxDelay = 6; // 20 seconds  
   return Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 }
 
