@@ -1,13 +1,13 @@
 import fetch from "node-fetch";
 import https from 'node:https';
 import * as cheerio from 'cheerio';
-import { log, getRandomUserAgent } from './utils.js';
+import { log, getRandomUserAgent, isSocketHangupError } from './utils.js';
 import { getBaseUri } from './config.js';
 
 // Common headers
 const COMMON_HEADERS = {
   'Accept-Encoding': 'gzip, deflate, br',
-  'Connection': 'close',
+  'Connection': 'keep-alive',
   'Cache-Control': 'no-store'
 };
 
@@ -28,7 +28,7 @@ export class VisaHttpClient {
     // Генерируем User-Agent один раз при создании экземпляра для поддержания сессии
     this.userAgent = getRandomUserAgent();
     // log(`Using User-Agent for session: ${this.userAgent}`);
-    this.bookingAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 4, maxFreeSockets: 2 });
+    this.agent = new https.Agent({ keepAlive: true, keepAliveMsecs: 30000, maxSockets: 8, maxFreeSockets: 2 });
   }
 
   // Public API methods
@@ -147,7 +147,7 @@ export class VisaHttpClient {
 
   // Private request methods
   async _anonymousRequest(url, headers = {}) {
-    return fetch(url, {
+    return this._fetchWithAgent(url, {
       headers: getHeadersWithUserAgent(this.userAgent, {
         "Accept": "*/*",
         "Referer": this.baseUri,
@@ -158,20 +158,20 @@ export class VisaHttpClient {
   }
 
   async _jsonRequest(url, headers = {}) {
-    return fetch(url, {
+    const response = await this._fetchWithAgent(url, {
       headers: getHeadersWithUserAgent(this.userAgent, {
         "Accept": "application/json",
         "X-Requested-With": "XMLHttpRequest",
         ...headers
       }),
       cache: "no-store"
-    })
-      .then(r => r.json())
-      .then(r => this._handleErrors(r));
+    });
+    const json = await response.json();
+    return this._handleErrors(json);
   }
 
   async _submitForm(url, headers = {}, formData = {}) {
-    return fetch(url, {
+    return this._fetchWithAgent(url, {
       method: "POST",
       headers: getHeadersWithUserAgent(this.userAgent, {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -200,12 +200,11 @@ export class VisaHttpClient {
     // log(`Form Keys: ${formKeys.join(', ')}`);
     // log(`Body Length: ${bodyStr.length}`);
     
-    const response = await fetch(url, {
+    const response = await this._fetchWithAgent(url, {
       method: "POST",
       redirect: "follow",
       headers: finalHeaders,
-      body: new URLSearchParams(formData),
-      agent: this.bookingAgent
+      body: new URLSearchParams(formData)
     });
 
     // log(`=== FORM SUBMISSION RESPONSE ===`);
@@ -218,6 +217,17 @@ export class VisaHttpClient {
   }
 
   // Private utility methods
+  async _fetchWithAgent(url, options = {}) {
+    try {
+      const opts = this.agent ? { ...options, agent: this.agent } : options;
+      return await fetch(url, opts);
+    } catch (err) {
+      if (isSocketHangupError(err)) {
+        return await fetch(url, options);
+      }
+      throw err;
+    }
+  }
   async _extractHeaders(res) {
     const cookies = this._extractRelevantCookies(res);
     const html = await res.text();
